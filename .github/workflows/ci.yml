@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure
+      shell: bash
+      run: cmake --preset=ci-linux
+
+    - name: Build
+      run: cmake --build --preset=ci-linux
+
+    - name: Test
+      working-directory: build
+      run: ctest --output-on-failure -C Release -j 2
