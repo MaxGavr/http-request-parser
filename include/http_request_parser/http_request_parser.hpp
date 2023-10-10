@@ -3,6 +3,7 @@
 #include <string_view>
 #include <functional>
 #include <optional>
+#include <unordered_map>
 
 class HttpRequest
 {
@@ -28,4 +29,11 @@ public:
 
     using HeaderEnumerator = std::function<bool(std::string_view header_name, std::string_view header_value)>;
     void EnumerateHeaders(const HeaderEnumerator& enumerator) const;
+
+private:
+    HttpRequest(Method method, std::string_view url, std::unordered_map<std::string_view, std::string_view> headers);
+
+    Method m_method;
+    std::string_view m_url;
+    std::unordered_map<std::string_view, std::string_view> m_headers;
 };
