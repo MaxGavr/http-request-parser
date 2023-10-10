@@ -13,10 +13,24 @@ target_compile_features(http_request_parser PUBLIC cxx_std_17)
 # Tests
 #
 
+include(FetchContent)
+
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG v3.4.0
+)
+
+FetchContent_MakeAvailable(Catch2)
+
 add_executable(http_request_parser_test
     source/http_request_parser_test.cpp
 )
-target_link_libraries(http_request_parser_test PRIVATE http_request_parser)
+target_link_libraries(http_request_parser_test
+    PRIVATE http_request_parser
+    PRIVATE Catch2::Catch2WithMain
+)
 
 include(CTest)
-add_test(NAME http_request_parser_test COMMAND http_request_parser_test)
+include(Catch)
+catch_discover_tests(http_request_parser_test)
