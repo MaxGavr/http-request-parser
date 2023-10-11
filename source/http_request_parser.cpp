@@ -80,16 +80,14 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
         VersionStart,
         Version,
 
-        StartLineEnd,
-
-        HeadersStart,
+        RequestLineEnding,
 
         HeaderNameStart,
         HeaderName,
         HeaderDelimiter,
         HeaderValueStart,
         HeaderValue,
-        HeaderLineEnd,
+        HeaderLineEnding,
 
         HeadersLineEnding,
 
@@ -190,13 +188,13 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                 if (IsCR(c))
                 {
                     token_end = iterator;
-                    state = State::StartLineEnd;
+                    state = State::RequestLineEnding;
                     break;
                 }
 
                 return error;
             }
-            case State::StartLineEnd:
+            case State::RequestLineEnding:
             {
                 if (!IsLF(c))
                     return error;
@@ -273,13 +271,13 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     header_value = get_token();
                     headers.emplace(header_name, header_value);
 
-                    state = State::HeaderLineEnd;
+                    state = State::HeaderLineEnding;
                     break;
                 }
 
                 return error;
             }
-            case State::HeaderLineEnd:
+            case State::HeaderLineEnding:
             {
                 if (!IsLF(c))
                     return error;
@@ -293,6 +291,10 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     return error;
 
                 state = State::Finished;
+                break;
+            }
+            case State::Finished:
+            {
                 break;
             }
         }
