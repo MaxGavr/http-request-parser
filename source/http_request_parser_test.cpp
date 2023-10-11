@@ -19,7 +19,7 @@ TEST_CASE("Parsing HTTP GET request")
 
     CHECK(request->GetMethod() == HttpRequest::Method::Get);
     CHECK(request->GetUrl() == "/wiki/http");
-    CHECK(request->GetHeader("host") == "ru.wikipedia.org");
+    CHECK(request->GetHeader("hOsT") == "ru.wikipedia.org");
 
     const std::vector<std::pair<std::string, std::string>> expected_headers = {
         {"host", "ru.wikipedia.org"},
