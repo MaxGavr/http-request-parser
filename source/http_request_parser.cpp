@@ -41,24 +41,6 @@ bool IsTokenChar(char c)
 {
     return IsVisual(c) && !IsDelimiter(c);
 }
-
-std::pair<std::optional<HttpRequest::Method>, HttpRequest::ParsingResult> ParseMethod(std::string_view method)
-{
-    static std::unordered_map<std::string_view, HttpRequest::Method> known_methods = {
-        {"GET", HttpRequest::Method::Get},
-        {"POST", HttpRequest::Method::Post},
-        {"PUT", HttpRequest::Method::Put},
-        {"CONNECT", HttpRequest::Method::Connect},
-        {"HEAD", HttpRequest::Method::Head},
-    };
-
-    auto it = known_methods.find(method);
-    if (it == known_methods.end())
-        return {{}, HttpRequest::ParsingResult::Error};
-
-    return {it->second, HttpRequest::ParsingResult::Success};
-}
-
 }
 
 std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::Parse(std::string request_string)
@@ -72,7 +54,13 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
     enum class State
     {
         MethodStart,
-        Method,
+
+        MethodGet,
+        MethodP,
+        MethodPost,
+        MethodPut,
+        MethodConnect,
+        MethodHead,
 
         UrlStart,
         Url,
@@ -99,6 +87,8 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
     auto iterator = request_string.begin();
     const auto end = request_string.end();
 
+    size_t method_index = 1;
+
     std::string::const_iterator token_start;
     std::string::const_iterator token_end;
 
@@ -117,30 +107,147 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
         {
             case State::MethodStart:
             {
-                if (!IsTokenChar(c))
-                    return error;
-                
-                token_start = iterator;
-                state = State::Method;
+                switch (std::tolower(c))
+                {
+                    case 'c':
+                        method = Method::Connect;
+                        state = State::MethodConnect;
+                        break;
+                    case 'g':
+                        method = Method::Get;
+                        state = State::MethodGet;
+                        break;
+                    case 'h':
+                        method = Method::Head;
+                        state = State::MethodHead;
+                        break;
+                    case 'p':
+                        state = State::MethodP;
+                        break;
+                    default:
+                        return error;
+                }
 
                 break;
             }
-            case State::Method:
+            case State::MethodConnect:
             {
-                if (IsTokenChar(c))
+                constexpr std::string_view method_str = "connect";
+
+                if (method_index < method_str.size())
+                {
+                    if (std::tolower(c) != method_str[method_index])
+                        return error;
+
+                    ++method_index;
                     break;
+                }
 
                 if (IsSpace(c))
                 {
-                    token_end = iterator;
+                    state = State::UrlStart;
+                    break;
+                }
 
-                    const auto [method_opt, err] = ParseMethod(get_token());
-                    if (err == ParsingResult::Error)
+                return error;
+            }
+            case State::MethodGet:
+            {
+                constexpr std::string_view method_str = "get";
+
+                if (method_index < method_str.size())
+                {
+                    if (std::tolower(c) != method_str[method_index])
                         return error;
 
-                    method = *method_opt;
-                    state = State::UrlStart;
+                    ++method_index;
+                    break;
+                }
 
+                if (IsSpace(c))
+                {
+                    state = State::UrlStart;
+                    break;
+                }
+
+                return error;
+            }
+            case State::MethodHead:
+            {
+                constexpr std::string_view method_str = "head";
+
+                if (method_index < method_str.size())
+                {
+                    if (std::tolower(c) != method_str[method_index])
+                        return error;
+
+                    ++method_index;
+                    break;
+                }
+
+                if (IsSpace(c))
+                {
+                    state = State::UrlStart;
+                    break;
+                }
+
+                return error;
+            }
+            case State::MethodP:
+            {
+                switch (std::tolower(c))
+                {
+                    case 'o':
+                        state = State::MethodPost;
+                        ++method_index;
+                        break;
+                    case 'u':
+                        state = State::MethodPut;
+                        ++method_index;
+                        break;
+                    default:
+                        return error;
+                }
+
+                break;
+            }
+            case State::MethodPost:
+            {
+                constexpr std::string_view method_str = "post";
+
+                if (method_index < method_str.size())
+                {
+                    if (std::tolower(c) != method_str[method_index])
+                        return error;
+
+                    ++method_index;
+                    break;
+                }
+
+                if (IsSpace(c))
+                {
+                    state = State::UrlStart;
+                    break;
+                }
+
+                return error;
+            }
+            case State::MethodPut:
+            {
+                constexpr std::string_view method_str = "put";
+
+                if (method_index < method_str.size())
+                {
+                    if (std::tolower(c) != method_str[method_index])
+                        return error;
+
+                    ++method_index;
+                    break;
+                }
+
+                if (IsSpace(c))
+                {
+                    state = State::UrlStart;
                     break;
                 }
 
