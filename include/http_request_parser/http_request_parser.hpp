@@ -1,9 +1,16 @@
 #pragma once
 
+#include <stdexcept>
 #include <string_view>
 #include <functional>
 #include <optional>
 #include <unordered_map>
+
+class ParsingError : public std::runtime_error
+{
+public:
+    using std::runtime_error::runtime_error;
+};
 
 class HttpRequest
 {
