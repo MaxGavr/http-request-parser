@@ -1,7 +1,5 @@
 #include "http_request_parser/http_request_parser.hpp"
 
-#include <stdexcept>
-
 namespace
 {
 bool IsSpace(char c)
@@ -68,7 +66,7 @@ HttpRequest::Method ParseMethod(std::string_view method)
 
 }
 
-HttpRequest HttpRequest::Parse(std::string_view request_string)
+HttpRequest HttpRequest::Parse(std::string request_string)
 {
     std::optional<Method> method;
     std::optional<std::string_view> url;
@@ -103,17 +101,17 @@ HttpRequest HttpRequest::Parse(std::string_view request_string)
 
     State state = State::MethodStart;
 
-    auto iterator = request_string.cbegin();
-    auto end = request_string.cend();
+    auto iterator = request_string.begin();
+    const auto end = request_string.end();
 
-    std::string_view::const_iterator token_start;
-    std::string_view::const_iterator token_end;
+    std::string::const_iterator token_start;
+    std::string::const_iterator token_end;
 
     std::string_view header_name;
     std::string_view header_value;
 
     const auto get_token = [&token_start, &token_end] {
-        return std::string_view(token_start, std::distance(token_start, token_end));
+        return std::string_view(&(*token_start), std::distance(token_start, token_end));
     };
 
     while (iterator != end)
@@ -217,6 +215,8 @@ HttpRequest HttpRequest::Parse(std::string_view request_string)
                     ThrowError("invalid header name");
 
                 token_start = iterator;
+                *iterator = std::tolower(*iterator);
+
                 state = State::HeaderName;
 
                 break;
@@ -224,7 +224,10 @@ HttpRequest HttpRequest::Parse(std::string_view request_string)
             case State::HeaderName:
             {
                 if (IsTokenChar(c))
+                {
+                    *iterator = std::tolower(*iterator);
                     break;
+                }
 
                 if (c == ':')
                 {
@@ -299,7 +302,7 @@ HttpRequest HttpRequest::Parse(std::string_view request_string)
     if (state != State::Finished)
         throw ParsingError("parsing failed");
 
-    return {*method, *url, std::move(headers)};
+    return {std::move(request_string), *method, *url, std::move(headers)};
 }
 
 HttpRequest::Method HttpRequest::GetMethod() const
@@ -312,9 +315,12 @@ std::string_view HttpRequest::GetUrl() const
     return m_url;
 }
 
-std::optional<std::string_view> HttpRequest::GetHeader(std::string_view name) const
+std::optional<std::string_view> HttpRequest::GetHeader(std::string name) const
 {
-    auto it = m_headers.find(name);
+    for (auto& c : name)
+        c = std::tolower(c);
+
+    const auto it = m_headers.find(name);
     if (it == m_headers.end())
         return {};
 
@@ -330,8 +336,9 @@ void HttpRequest::EnumerateHeaders(const HeaderEnumerator& enumerator) const
     }
 }
 
-HttpRequest::HttpRequest(Method method, std::string_view url, std::unordered_map<std::string_view, std::string_view> headers)
-    : m_method(method)
+HttpRequest::HttpRequest(std::string&& data, Method method, std::string_view url, std::unordered_map<std::string_view, std::string_view>&& headers)
+    : m_data(std::move(data))
+    , m_method(method)
     , m_url(url)
     , m_headers(std::move(headers))
 {

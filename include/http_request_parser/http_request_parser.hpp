@@ -15,7 +15,7 @@ public:
 class HttpRequest
 {
 public:
-    static HttpRequest Parse(std::string_view request_string);
+    static HttpRequest Parse(std::string request_string);
 
     enum class Method
     {
@@ -32,13 +32,15 @@ public:
 
     Method GetMethod() const;
     std::string_view GetUrl() const;
-    std::optional<std::string_view> GetHeader(std::string_view name) const;
+    std::optional<std::string_view> GetHeader(std::string name) const;
 
     using HeaderEnumerator = std::function<bool(std::string_view header_name, std::string_view header_value)>;
     void EnumerateHeaders(const HeaderEnumerator& enumerator) const;
 
 private:
-    HttpRequest(Method method, std::string_view url, std::unordered_map<std::string_view, std::string_view> headers);
+    HttpRequest(std::string&& data, Method method, std::string_view url, std::unordered_map<std::string_view, std::string_view>&& headers);
+
+    std::string m_data;
 
     Method m_method;
     std::string_view m_url;
