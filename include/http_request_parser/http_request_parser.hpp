@@ -19,11 +19,11 @@ public:
 
     enum class Method
     {
+        Connect,
         Get,
         Head,
         Post,
         Put,
-        Connect,
     };
 
     Method GetMethod() const;
