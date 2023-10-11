@@ -2,7 +2,6 @@
 
 #include "http_request_parser/http_request_parser.hpp"
 
-#include <set>
 #include <algorithm>
 
 TEST_CASE("Parsing HTTP request")
