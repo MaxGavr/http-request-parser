@@ -87,7 +87,7 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
     auto iterator = request_string.begin();
     const auto end = request_string.end();
 
-    size_t method_index = 1;
+    size_t method_char_index = 1;
 
     std::string::const_iterator token_start;
     std::string::const_iterator token_end;
@@ -134,12 +134,12 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
             {
                 constexpr std::string_view method_str = "connect";
 
-                if (method_index < method_str.size())
+                if (method_char_index < method_str.size())
                 {
-                    if (std::tolower(c) != method_str[method_index])
+                    if (std::tolower(c) != method_str[method_char_index])
                         return error;
 
-                    ++method_index;
+                    ++method_char_index;
                     break;
                 }
 
@@ -155,12 +155,12 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
             {
                 constexpr std::string_view method_str = "get";
 
-                if (method_index < method_str.size())
+                if (method_char_index < method_str.size())
                 {
-                    if (std::tolower(c) != method_str[method_index])
+                    if (std::tolower(c) != method_str[method_char_index])
                         return error;
 
-                    ++method_index;
+                    ++method_char_index;
                     break;
                 }
 
@@ -176,12 +176,12 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
             {
                 constexpr std::string_view method_str = "head";
 
-                if (method_index < method_str.size())
+                if (method_char_index < method_str.size())
                 {
-                    if (std::tolower(c) != method_str[method_index])
+                    if (std::tolower(c) != method_str[method_char_index])
                         return error;
 
-                    ++method_index;
+                    ++method_char_index;
                     break;
                 }
 
@@ -200,12 +200,12 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     case 'o':
                         state = State::MethodPost;
                         method = Method::Post;
-                        ++method_index;
+                        ++method_char_index;
                         break;
                     case 'u':
                         state = State::MethodPut;
                         method = Method::Put;
-                        ++method_index;
+                        ++method_char_index;
                         break;
                     default:
                         return error;
@@ -217,12 +217,12 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
             {
                 constexpr std::string_view method_str = "post";
 
-                if (method_index < method_str.size())
+                if (method_char_index < method_str.size())
                 {
-                    if (std::tolower(c) != method_str[method_index])
+                    if (std::tolower(c) != method_str[method_char_index])
                         return error;
 
-                    ++method_index;
+                    ++method_char_index;
                     break;
                 }
 
@@ -238,12 +238,12 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
             {
                 constexpr std::string_view method_str = "put";
 
-                if (method_index < method_str.size())
+                if (method_char_index < method_str.size())
                 {
-                    if (std::tolower(c) != method_str[method_index])
+                    if (std::tolower(c) != method_str[method_char_index])
                         return error;
 
-                    ++method_index;
+                    ++method_char_index;
                     break;
                 }
 
