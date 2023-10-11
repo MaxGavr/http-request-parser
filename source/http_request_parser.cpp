@@ -121,8 +121,8 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     return error;
                 
                 token_start = iterator;
-
                 state = State::Method;
+
                 break;
             }
             case State::Method:
@@ -137,9 +137,10 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     const auto [method_opt, err] = ParseMethod(get_token());
                     if (err == ParsingResult::Error)
                         return error;
-                    method = *method_opt;
 
+                    method = *method_opt;
                     state = State::UrlStart;
+
                     break;
                 }
 
@@ -164,8 +165,8 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                 {
                     token_end = iterator;
                     url = get_token();
-
                     state = State::VersionStart;
+
                     break;
                 }
 
@@ -178,6 +179,7 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
 
                 token_start = iterator;
                 state = State::Version;
+
                 break;
             }
             case State::Version:
@@ -189,6 +191,7 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                 {
                     token_end = iterator;
                     state = State::RequestLineEnding;
+
                     break;
                 }
 
@@ -200,6 +203,7 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     return error;
 
                 state = State::HeaderNameStart;
+
                 break;
             }
             case State::HeaderNameStart:
@@ -232,7 +236,6 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                 {
                     token_end = iterator;
                     header_name = get_token();
-
                     state = State::HeaderDelimiter;
 
                     break;
@@ -272,6 +275,7 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     headers.emplace(header_name, header_value);
 
                     state = State::HeaderLineEnding;
+
                     break;
                 }
 
@@ -283,6 +287,7 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     return error;
 
                 state = State::HeaderNameStart;
+
                 break;
             }
             case State::HeadersLineEnding:
@@ -291,6 +296,7 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                     return error;
 
                 state = State::Finished;
+
                 break;
             }
             case State::Finished:
