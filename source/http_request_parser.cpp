@@ -42,12 +42,7 @@ bool IsTokenChar(char c)
     return IsVisual(c) && !IsDelimiter(c);
 }
 
-[[noreturn]] void ThrowError(const char* message)
-{
-    throw ParsingError(message);
-}
-
-HttpRequest::Method ParseMethod(std::string_view method)
+std::pair<std::optional<HttpRequest::Method>, HttpRequest::ParsingResult> ParseMethod(std::string_view method)
 {
     static std::unordered_map<std::string_view, HttpRequest::Method> known_methods = {
         {"GET", HttpRequest::Method::Get},
@@ -59,15 +54,17 @@ HttpRequest::Method ParseMethod(std::string_view method)
 
     auto it = known_methods.find(method);
     if (it == known_methods.end())
-        ThrowError("unknown method");
+        return {{}, HttpRequest::ParsingResult::Error};
 
-    return it->second;
+    return {it->second, HttpRequest::ParsingResult::Success};
 }
 
 }
 
-HttpRequest HttpRequest::Parse(std::string request_string)
+std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::Parse(std::string request_string)
 {
+    const auto error = std::make_pair(std::optional<HttpRequest>(), HttpRequest::ParsingResult::Error);
+
     std::optional<Method> method;
     std::optional<std::string_view> url;
     std::unordered_map<std::string_view, std::string_view> headers;
@@ -123,7 +120,7 @@ HttpRequest HttpRequest::Parse(std::string request_string)
             case State::MethodStart:
             {
                 if (!IsTokenChar(c))
-                    ThrowError("invalid method");
+                    return error;
                 
                 token_start = iterator;
 
@@ -138,18 +135,22 @@ HttpRequest HttpRequest::Parse(std::string request_string)
                 if (IsSpace(c))
                 {
                     token_end = iterator;
-                    method = ParseMethod(get_token());
+
+                    const auto [method_opt, err] = ParseMethod(get_token());
+                    if (err == ParsingResult::Error)
+                        return error;
+                    method = *method_opt;
 
                     state = State::UrlStart;
                     break;
                 }
 
-                ThrowError("invalid method");
+                return error;
             }
             case State::UrlStart:
             {
                 if (!IsVisual(c) && !IsDelimiter(c))
-                    ThrowError("invalid URL");
+                    return error;
 
                 token_start = iterator;
                 state = State::Url;
@@ -170,12 +171,12 @@ HttpRequest HttpRequest::Parse(std::string request_string)
                     break;
                 }
 
-                ThrowError("invalid url");
+                return error;
             }
             case State::VersionStart:
             {
                 if (!IsVisual(c) && !IsDelimiter(c))
-                    ThrowError("invalid version");
+                    return error;
 
                 token_start = iterator;
                 state = State::Version;
@@ -193,12 +194,12 @@ HttpRequest HttpRequest::Parse(std::string request_string)
                     break;
                 }
 
-                ThrowError("invalid version");
+                return error;
             }
             case State::StartLineEnd:
             {
                 if (!IsLF(c))
-                    ThrowError("invalid start line ending");
+                    return error;
 
                 state = State::HeaderNameStart;
                 break;
@@ -212,7 +213,7 @@ HttpRequest HttpRequest::Parse(std::string request_string)
                 }
 
                 if (!IsTokenChar(c))
-                    ThrowError("invalid header name");
+                    return error;
 
                 token_start = iterator;
                 *iterator = std::tolower(*iterator);
@@ -239,12 +240,12 @@ HttpRequest HttpRequest::Parse(std::string request_string)
                     break;
                 }
 
-                ThrowError("invalid header name");
+                return error;
             }
             case State::HeaderDelimiter:
             {
                 if (!IsSpace(c))
-                    ThrowError("invalid header delimiter");
+                    return error;
 
                 state = State::HeaderValueStart;
 
@@ -253,7 +254,7 @@ HttpRequest HttpRequest::Parse(std::string request_string)
             case State::HeaderValueStart:
             {
                 if (!IsVisual(c))
-                    ThrowError("invalid header value");
+                    return error;
 
                 token_start = iterator;
                 state = State::HeaderValue;
@@ -276,12 +277,12 @@ HttpRequest HttpRequest::Parse(std::string request_string)
                     break;
                 }
 
-                ThrowError("invalid header value");
+                return error;
             }
             case State::HeaderLineEnd:
             {
                 if (!IsLF(c))
-                    ThrowError("invalid header line ending");
+                    return error;
 
                 state = State::HeaderNameStart;
                 break;
@@ -289,7 +290,7 @@ HttpRequest HttpRequest::Parse(std::string request_string)
             case State::HeadersLineEnding:
             {
                 if (!IsLF(c))
-                    ThrowError("invalid headers line ending");
+                    return error;
 
                 state = State::Finished;
                 break;
@@ -300,9 +301,12 @@ HttpRequest HttpRequest::Parse(std::string request_string)
     }
 
     if (state != State::Finished)
-        throw ParsingError("parsing failed");
+        return error;
 
-    return {std::move(request_string), *method, *url, std::move(headers)};
+    return {
+        HttpRequest(std::move(request_string), *method, *url, std::move(headers)),
+        ParsingResult::Success
+    };
 }
 
 HttpRequest::Method HttpRequest::GetMethod() const

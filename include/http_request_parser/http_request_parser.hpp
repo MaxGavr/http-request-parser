@@ -15,7 +15,13 @@ public:
 class HttpRequest
 {
 public:
-    static HttpRequest Parse(std::string request_string);
+    enum class ParsingResult
+    {
+        Success,
+        Error,
+    };
+
+    static std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> Parse(std::string request_string);
 
     enum class Method
     {

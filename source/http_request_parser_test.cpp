@@ -14,11 +14,13 @@ TEST_CASE("Parsing HTTP request")
         "Accept: text/html\r\n"
         "Connection: close\r\n\r\n";
 
-    const HttpRequest request = HttpRequest::Parse(request_string);
+    const auto [request, error] = HttpRequest::Parse(request_string);
 
-    CHECK(request.GetMethod() == HttpRequest::Method::Get);
-    CHECK(request.GetUrl() == "/wiki/http");
-    CHECK(request.GetHeader("host") == "ru.wikipedia.org");
+    REQUIRE(error == HttpRequest::ParsingResult::Success);
+
+    CHECK(request->GetMethod() == HttpRequest::Method::Get);
+    CHECK(request->GetUrl() == "/wiki/http");
+    CHECK(request->GetHeader("host") == "ru.wikipedia.org");
 
     const std::vector<std::pair<std::string, std::string>> expected_headers = {
         {"host", "ru.wikipedia.org"},
@@ -33,7 +35,7 @@ TEST_CASE("Parsing HTTP request")
         return true;
     };
 
-    request.EnumerateHeaders(enumerator);
+    request->EnumerateHeaders(enumerator);
 
     const auto to_lower_string = [] (std::string& str) {
         std::transform(str.begin(), str.end(), str.begin(), [] (unsigned char c) { return std::tolower(c); });
