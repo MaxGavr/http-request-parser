@@ -329,7 +329,7 @@ std::optional<std::string_view> HttpRequest::GetHeader(std::string name) const
 
 void HttpRequest::EnumerateHeaders(const HeaderEnumerator& enumerator) const
 {
-    for (auto [name, value] : m_headers)
+    for (const auto& [name, value] : m_headers)
     {
         if (!enumerator(name, value))
             return;
