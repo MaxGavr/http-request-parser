@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-TEST_CASE("Parsing HTTP request")
+TEST_CASE("Parsing HTTP GET request")
 {
     const std::string request_string = 
         "GET /wiki/http HTTP/1.1\r\n"
@@ -52,4 +52,17 @@ TEST_CASE("Parsing HTTP request")
     CHECK(std::is_permutation(expected_headers.begin(), expected_headers.end(),
                               enumerated_headers.begin(), enumerated_headers.end(),
                               are_headers_equal));
+}
+
+TEST_CASE("Parsing HTTP POST request")
+{
+    const std::string request_string = 
+        "POST /wiki/http HTTP/1.1\r\n"
+        "\r\n";
+
+    const auto [request, error] = HttpRequest::Parse(request_string);
+
+    REQUIRE(error == HttpRequest::ParsingResult::Success);
+
+    CHECK(request->GetMethod() == HttpRequest::Method::Post);
 }

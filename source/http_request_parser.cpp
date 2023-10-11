@@ -199,10 +199,12 @@ std::pair<std::optional<HttpRequest>, HttpRequest::ParsingResult> HttpRequest::P
                 {
                     case 'o':
                         state = State::MethodPost;
+                        method = Method::Post;
                         ++method_index;
                         break;
                     case 'u':
                         state = State::MethodPut;
+                        method = Method::Put;
                         ++method_index;
                         break;
                     default:
